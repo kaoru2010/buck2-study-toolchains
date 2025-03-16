@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+# https://github.com/facebook/buck2/releases
+BUCK2_VERSION=2025-03-01
+
+if [ ! -e "$SCRIPT_DIR/.buck2_bin/buck2_$BUCK2_VERSION" ]; then
+    (
+        rm -rf $SCRIPT_DIR/.buck2_bin
+        mkdir -p $SCRIPT_DIR/.buck2_bin
+        cd $SCRIPT_DIR/.buck2_bin
+
+        arch=`uname -a`
+        echo "arch=$arch"
+        if [[ $arch =~ "Darwin" ]]; then
+            echo buck2-aarch64-apple-darwin.zst
+            curl -L https://github.com/facebook/buck2/releases/download/$BUCK2_VERSION/buck2-aarch64-apple-darwin.zst -o buck2-aarch64-apple-darwin.zst
+        elif [[ $arch =~ "aarch64" || $arch =~ "arm64" ]]; then
+            echo buck2-aarch64-unknown-linux-gnu.zst
+            curl -L https://github.com/facebook/buck2/releases/download/$BUCK2_VERSION/buck2-aarch64-unknown-linux-gnu.zst -o buck2-aarch64-unknown-linux-gnu.zst
+        else
+            echo buck2-x86_64-unknown-linux-gnu.zst
+            curl -L https://github.com/facebook/buck2/releases/download/$BUCK2_VERSION/buck2-x86_64-unknown-linux-gnu.zst -o buck2-x86_64-unknown-linux-gnu.zst
+        fi
+
+        unzstd buck2-*.zst
+        rm buck2-*.zst
+        mv buck2-* buck2_$BUCK2_VERSION
+        chmod +x buck2_$BUCK2_VERSION
+    )
+fi
+
+exec $SCRIPT_DIR/.buck2_bin/buck2_$BUCK2_VERSION "$@"
