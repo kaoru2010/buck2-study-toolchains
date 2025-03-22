@@ -76,3 +76,8 @@ genrule(
   cmd = 'rsync -av --copy-links pict_archive/ ${TMP}/; (cd ${TMP}; make pict); cp ${TMP}/pict ${OUT}',
   visibility = ['PUBLIC'],
 )
+
+export_file(
+  name = 'convert_tsv_to_cucumber_table.go',
+  visibility = ['PUBLIC'],
+)
