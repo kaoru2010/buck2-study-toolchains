@@ -52,3 +52,27 @@ sh_binary(
   main = ':bats_archive[bats]',
   visibility = ['PUBLIC'],
 )
+
+# https://github.com/microsoft/pict
+PICT_VERSION = '3.7.4'
+
+http_archive(
+  name = 'pict_archive',
+  urls = [
+    'https://github.com/microsoft/pict/archive/refs/tags/v{}.tar.gz'.format(PICT_VERSION),
+  ],
+  sha256 = '42af3ac7948d5dfed66525c4b6a58464dfd8f78a370b1fc03a8d35be2179928f',
+  type = 'tar.gz',
+  strip_prefix = 'pict-{}'.format(PICT_VERSION),
+)
+
+genrule(
+  name = 'pict_bin',
+  out = 'pict.sh',
+  executable = True,
+  srcs = [
+    ':pict_archive',
+  ],
+  cmd = 'rsync -av --copy-links pict_archive/ ${TMP}/; (cd ${TMP}; make pict); cp ${TMP}/pict ${OUT}',
+  visibility = ['PUBLIC'],
+)
