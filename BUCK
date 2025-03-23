@@ -68,7 +68,7 @@ http_archive(
 
 genrule(
   name = 'pict_bin',
-  out = 'pict.sh',
+  out = 'pict',
   executable = True,
   srcs = [
     ':pict_archive',

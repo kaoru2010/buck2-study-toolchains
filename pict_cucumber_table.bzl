@@ -1,5 +1,3 @@
-#convert_tsv_to_cucumber_table.go
-
 def _pict_cucumber_table_impl(ctx: AnalysisContext) -> list[Provider]:
     pict_out_tsv = ctx.actions.declare_output('pict_out.tsv')
     sh = ctx.actions.write(
@@ -10,22 +8,6 @@ def _pict_cucumber_table_impl(ctx: AnalysisContext) -> list[Provider]:
             "set -o pipefail",
             "",
             cmd_args([ctx.attrs.pict_bin[RunInfo], ctx.attrs.src, '>', pict_out_tsv.as_output()], delimiter=" "),
-
-#            cmd_args(['cp', '-a', srcs_artifact, modified_srcs_dir.as_output()], delimiter=" "),
-#            "",
-#            cmd_args(["cd", modified_srcs_dir], delimiter=" "),
-#            "export BUCK2_WORKSPACE=`pwd`",
-#            "",
-#            patches,
-#            "",
-#            cmd_args(["cd", root_project_dir], delimiter=" "),
-#            cmd_args(["./gradlew", ctx.attrs.args, '|', 'tee', build_log.as_output()], delimiter=" ", relative_to = modified_srcs_dir.project(root_project_dir)),
-#            "",
-#            'cd "$BUCK2_WORKSPACE"',
-#            cmd_args("export TMP=${TMPDIR:-/tmp}"),
-#            cmd_args(modified_srcs_dir.project(root_project_dir), format = "export ROOT_PROJECT_DIR={}", relative_to = modified_srcs_dir),
-#            cmd_args(out_dir.as_output(), format="export OUT={}", relative_to = modified_srcs_dir),
-#            cmd_args([ctx.attrs.cmd]),
         ]),
         is_executable = True,
     )
