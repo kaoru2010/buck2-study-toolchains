@@ -73,9 +73,9 @@ func convertTsvToCucumberTable(inputFilePath, outputFilePath string) error {
 		// データ行に TRUE / FALSE を追記
 		for rowIndex := 1; rowIndex < len(data); rowIndex++ {
 			if errorOnRow[rowIndex] {
-				data[rowIndex] = append(data[rowIndex], "TRUE")
+				data[rowIndex] = append(data[rowIndex], "true")
 			} else {
-				data[rowIndex] = append(data[rowIndex], "FALSE")
+				data[rowIndex] = append(data[rowIndex], "false")
 			}
 		}
 	}
