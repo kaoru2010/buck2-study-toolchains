@@ -58,12 +58,71 @@ def _mise_workspace_impl(ctx: AnalysisContext) -> list[Provider]:
     else:
         fail("sub_targets must be a list or dict")
 
-    return [
+    providers = []
+
+    if ctx.attrs.run_cmd != None:
+        run_sh, _ = ctx.actions.write(
+            "run.sh",
+            cmd_args([
+                "#!/bin/sh",
+                "set -e",
+                "set -o pipefail",
+                "",
+                cmd_args(["cd", out_dir.as_output()], delimiter=" "),
+                cmd_args([ctx.attrs.mise_activate], delimiter=" "),
+                "",
+                cmd_args([ctx.attrs.run_cmd], delimiter=" "),
+            ]),
+            is_executable = True,
+            allow_args=True,
+            absolute=True,
+        )
+        providers.append(
+            RunInfo(
+                args = [cmd_args(["sh", run_sh], hidden = [
+                    out_dir,
+                    ctx.attrs.mise_activate,
+                    ctx.attrs.run_cmd,
+                ])],
+            ),
+        )
+
+    if ctx.attrs.test_cmd != None:
+        test_sh, _ = ctx.actions.write(
+            "test.sh",
+            cmd_args([
+                "#!/bin/sh",
+                "set -e",
+                "set -o pipefail",
+                "",
+                cmd_args(["cd", out_dir.as_output()], delimiter=" "),
+                cmd_args([ctx.attrs.mise_activate], delimiter=" "),
+                "",
+                cmd_args([ctx.attrs.test_cmd], delimiter=" "),
+            ]),
+            is_executable = True,
+            allow_args=True,
+            absolute=True,
+        )
+        providers.append(
+            ExternalRunnerTestInfo(
+                type = "mise_workspace_test",
+                command = [cmd_args(["sh", test_sh], hidden = [
+                    out_dir,
+                    ctx.attrs.mise_activate,
+                    ctx.attrs.test_cmd,
+                ])],
+            ),
+        )
+
+    providers.append(
         DefaultInfo(
             default_output = out_dir,
             sub_targets = sub_targets,
         ),
-    ]
+    )
+
+    return providers
 
 mise_workspace = rule(
     impl = _mise_workspace_impl,
@@ -71,6 +130,8 @@ mise_workspace = rule(
         "mise_activate": attrs.string(),
         "srcs": attrs.list(attrs.source(), default = []),
         "cmd": attrs.arg(),
+        "test_cmd": attrs.option(attrs.arg(), default = None),
+        "run_cmd": attrs.option(attrs.arg(), default = None),
         "sub_targets": attrs.one_of(
             attrs.list(attrs.string()),
             attrs.dict(
