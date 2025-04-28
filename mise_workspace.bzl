@@ -58,12 +58,144 @@ def _mise_workspace_impl(ctx: AnalysisContext) -> list[Provider]:
     else:
         fail("sub_targets must be a list or dict")
 
-    return [
+    providers = []
+
+    if ctx.attrs.run_cmd != None:
+        run_sh, _ = ctx.actions.write(
+            "run.sh",
+            cmd_args([
+                "#!/bin/sh",
+                "set -e",
+                "set -o pipefail",
+                "",
+                cmd_args(["cd", out_dir.as_output()], delimiter=" "),
+                cmd_args([ctx.attrs.mise_activate], delimiter=" "),
+                "",
+                cmd_args([ctx.attrs.run_cmd], delimiter=" "),
+            ]),
+            is_executable = True,
+            allow_args=True,
+            absolute=True,
+        )
+        providers.append(
+            RunInfo(
+                args = [cmd_args(["sh", run_sh], hidden = [
+                    out_dir,
+                    ctx.attrs.mise_activate,
+                    ctx.attrs.run_cmd,
+                ])],
+            ),
+        )
+
+    if ctx.attrs.test_cmd != None:
+        test_sh, _ = ctx.actions.write(
+            "test.sh",
+            cmd_args([
+                "#!/bin/sh",
+                "set -e",
+                "set -o pipefail",
+                "",
+                cmd_args(["cd", out_dir.as_output()], delimiter=" "),
+                cmd_args([ctx.attrs.mise_activate], delimiter=" "),
+                "",
+                cmd_args([ctx.attrs.test_cmd], delimiter=" "),
+            ]),
+            is_executable = True,
+            allow_args=True,
+            absolute=True,
+        )
+        providers.append(
+            ExternalRunnerTestInfo(
+                type = "mise_workspace_test",
+                command = [cmd_args(["sh", test_sh], hidden = [
+                    out_dir,
+                    ctx.attrs.mise_activate,
+                    ctx.attrs.test_cmd,
+                ])],
+            ),
+        )
+
+    if len(ctx.attrs.required_envs) > 0:
+        validation_result = ctx.actions.declare_output("validation_result.json")
+        validation_sh = ctx.actions.write(
+            "validation.sh",
+            cmd_args([
+                "#!/bin/bash",
+                "set -e",
+                "set -o pipefail",
+                "",
+                "# 環境変数の存在をチェックする関数",
+                "check_env_var() {",
+                '  local var_name="$1"',
+                '  local error_msg="$2"',
+                '',
+                '  if [ -z "${!var_name}" ]; then',
+                cmd_args(['    echo "$error_msg"', '>', validation_result.as_output()], delimiter=" "),
+                '    exit',
+                '  fi',
+                '}',
+                '',
+                [
+                    cmd_args([
+                        "check_env_var",
+                        name,
+                        json.encode({
+                            "version": 1,
+                            "data": {
+                                "status": "failure",
+                                "message": "エラー: 環境変数 {} が設定されていません。".format(name),
+                            },
+                        }),
+                    ], delimiter=" ", quote="shell")
+                    for name in ctx.attrs.required_envs
+                ],
+                '',
+                cmd_args([
+                    "echo",
+                    cmd_args(
+                        json.encode({
+                            "version": 1,
+                            "data": {
+                                "status": "success",
+                                "message": "OK",
+                            },
+                        }),
+                        quote="shell",
+                    ),
+                    '>',
+                    validation_result.as_output(),
+                ], delimiter=" ")
+            ]),
+            is_executable = True,
+        )
+        ctx.actions.run(
+            cmd_args(["bash", validation_sh], hidden = [
+                validation_result.as_output(),
+                ctx.attrs.required_envs,
+            ]),
+            category = 'mise_workspace_env_check',
+            always_print_stderr = True,
+        )
+        providers.append(
+            ValidationInfo(
+                validations = [
+                    ValidationSpec(
+                        name = "mise_workspace_env_check",
+                        validation_result = validation_result,
+                        optional = False,
+                    ),
+                ],
+            ),
+        )
+
+    providers.append(
         DefaultInfo(
             default_output = out_dir,
             sub_targets = sub_targets,
         ),
-    ]
+    )
+
+    return providers
 
 mise_workspace = rule(
     impl = _mise_workspace_impl,
@@ -71,6 +203,9 @@ mise_workspace = rule(
         "mise_activate": attrs.string(),
         "srcs": attrs.list(attrs.source(), default = []),
         "cmd": attrs.arg(),
+        "test_cmd": attrs.option(attrs.arg(), default = None),
+        "run_cmd": attrs.option(attrs.arg(), default = None),
+        "required_envs": attrs.list(attrs.string(), default = []),
         "sub_targets": attrs.one_of(
             attrs.list(attrs.string()),
             attrs.dict(
