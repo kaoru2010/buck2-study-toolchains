@@ -81,3 +81,9 @@ export_file(
   name = 'convert_tsv_to_cucumber_table.go',
   visibility = ['PUBLIC'],
 )
+
+sh_binary(
+  name = "aws_get_token",
+  main = "aws_get_token.py",
+  visibility = ['PUBLIC'],
+)

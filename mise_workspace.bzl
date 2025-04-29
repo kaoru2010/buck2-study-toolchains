@@ -21,8 +21,6 @@ def _mise_workspace_impl(ctx: AnalysisContext) -> list[Provider]:
         cmd_args([
             "#!/bin/sh",
             "set -euo pipefail",
-            "#set -e",
-            "#set -o pipefail",
             "",
             cmd_args(["cp", "-a", copied_srcs_dir, out_dir.as_output()], delimiter=" "),
             cmd_args(["cd", out_dir.as_output()], delimiter=" "),
@@ -67,8 +65,6 @@ def _mise_workspace_impl(ctx: AnalysisContext) -> list[Provider]:
             cmd_args([
                 "#!/bin/sh",
                 "set -euo pipefail",
-                "#set -e",
-                "#set -o pipefail",
                 "",
                 cmd_args(["cd", out_dir.as_output()], delimiter=" "),
                 cmd_args([ctx.attrs.mise_activate], delimiter=" "),
@@ -95,8 +91,6 @@ def _mise_workspace_impl(ctx: AnalysisContext) -> list[Provider]:
             cmd_args([
                 "#!/bin/sh",
                 "set -euo pipefail",
-                "#set -e",
-                "#set -o pipefail",
                 "",
                 cmd_args(["cd", out_dir.as_output()], delimiter=" "),
                 cmd_args([ctx.attrs.mise_activate], delimiter=" "),
@@ -125,8 +119,6 @@ def _mise_workspace_impl(ctx: AnalysisContext) -> list[Provider]:
             cmd_args([
                 "#!/bin/bash",
                 "set -euo pipefail",
-                "#set -e",
-                "#set -o pipefail",
                 "",
                 "# 環境変数の存在をチェックする関数",
                 "check_env_var() {",
