@@ -110,6 +110,11 @@ def _mise_workspace_impl(ctx: AnalysisContext) -> list[Provider]:
                     ctx.attrs.mise_activate,
                     ctx.attrs.test_cmds,
                 ])],
+                local_resources = { key: label for key, label in ctx.attrs.test_local_resources.items() },
+                required_local_resources = [
+                    RequiredTestLocalResource(key, listing=False, execution=True)
+                    for key in ctx.attrs.test_local_resources.keys()
+                ],
             ),
         )
 
@@ -197,12 +202,10 @@ def _mise_workspace_impl(ctx: AnalysisContext) -> list[Provider]:
 mise_workspace = rule(
     impl = _mise_workspace_impl,
     attrs = {
+        "required_envs": attrs.list(attrs.string(), default = []),
         "mise_activate": attrs.string(),
         "srcs": attrs.list(attrs.source(), default = []),
         "build_cmds": attrs.list(attrs.arg(), default = []),
-        "test_cmds": attrs.list(attrs.arg(), default = []),
-        "run_cmds": attrs.list(attrs.arg(), default = []),
-        "required_envs": attrs.list(attrs.string(), default = []),
         "sub_targets": attrs.one_of(
             attrs.list(attrs.string()),
             attrs.dict(
@@ -211,5 +214,8 @@ mise_workspace = rule(
             ),
             default = [],
         ),
+        "run_cmds": attrs.list(attrs.arg(), default = []),
+        "test_cmds": attrs.list(attrs.arg(), default = []),
+        "test_local_resources": attrs.dict(key = attrs.string(), value = attrs.label(), sorted = False, default = {}),
     },
 )
