@@ -27,7 +27,8 @@ def _mise_workspace_impl(ctx: AnalysisContext) -> list[Provider]:
             cmd_args([ctx.attrs.mise_activate], delimiter=" ", relative_to=out_dir),
             cmd_args(["mise", "trust"], delimiter=" "),
             cmd_args(["mise", "install"], delimiter=" "),
-            cmd_args([ctx.attrs.cmd], delimiter=" "),
+            "",
+            ctx.attrs.build_cmds,
         ]),
         is_executable = True,
         allow_args=True,
@@ -37,7 +38,7 @@ def _mise_workspace_impl(ctx: AnalysisContext) -> list[Provider]:
             out_dir.as_output(),
             copied_srcs_dir,
             ctx.attrs.mise_activate,
-            ctx.attrs.cmd,
+            ctx.attrs.build_cmds,
         ]),
         category = 'mise_workspace',
         always_print_stderr = True,
@@ -59,7 +60,7 @@ def _mise_workspace_impl(ctx: AnalysisContext) -> list[Provider]:
 
     providers = []
 
-    if ctx.attrs.run_cmd != None:
+    if len(ctx.attrs.run_cmds) > 0:
         run_sh, _ = ctx.actions.write(
             "run.sh",
             cmd_args([
@@ -69,7 +70,7 @@ def _mise_workspace_impl(ctx: AnalysisContext) -> list[Provider]:
                 cmd_args(["cd", out_dir.as_output()], delimiter=" "),
                 cmd_args([ctx.attrs.mise_activate], delimiter=" "),
                 "",
-                cmd_args([ctx.attrs.run_cmd], delimiter=" "),
+                ctx.attrs.run_cmds,
             ]),
             is_executable = True,
             allow_args=True,
@@ -80,12 +81,12 @@ def _mise_workspace_impl(ctx: AnalysisContext) -> list[Provider]:
                 args = [cmd_args(["sh", run_sh], hidden = [
                     out_dir,
                     ctx.attrs.mise_activate,
-                    ctx.attrs.run_cmd,
+                    ctx.attrs.run_cmds,
                 ])],
             ),
         )
 
-    if ctx.attrs.test_cmd != None:
+    if len(ctx.attrs.test_cmds) > 0:
         test_sh, _ = ctx.actions.write(
             "test.sh",
             cmd_args([
@@ -95,7 +96,7 @@ def _mise_workspace_impl(ctx: AnalysisContext) -> list[Provider]:
                 cmd_args(["cd", out_dir.as_output()], delimiter=" "),
                 cmd_args([ctx.attrs.mise_activate], delimiter=" "),
                 "",
-                cmd_args([ctx.attrs.test_cmd], delimiter=" "),
+                ctx.attrs.test_cmds,
             ]),
             is_executable = True,
             allow_args=True,
@@ -107,7 +108,7 @@ def _mise_workspace_impl(ctx: AnalysisContext) -> list[Provider]:
                 command = [cmd_args(["sh", test_sh], hidden = [
                     out_dir,
                     ctx.attrs.mise_activate,
-                    ctx.attrs.test_cmd,
+                    ctx.attrs.test_cmds,
                 ])],
             ),
         )
@@ -198,9 +199,9 @@ mise_workspace = rule(
     attrs = {
         "mise_activate": attrs.string(),
         "srcs": attrs.list(attrs.source(), default = []),
-        "cmd": attrs.arg(),
-        "test_cmd": attrs.option(attrs.arg(), default = None),
-        "run_cmd": attrs.option(attrs.arg(), default = None),
+        "build_cmds": attrs.list(attrs.arg(), default = []),
+        "test_cmds": attrs.list(attrs.arg(), default = []),
+        "run_cmds": attrs.list(attrs.arg(), default = []),
         "required_envs": attrs.list(attrs.string(), default = []),
         "sub_targets": attrs.one_of(
             attrs.list(attrs.string()),
