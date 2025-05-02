@@ -87,3 +87,8 @@ sh_binary(
   main = "aws_get_token.py",
   visibility = ['PUBLIC'],
 )
+
+export_file(
+  name = "gradle_collect_module_info.init.gradle.kts",
+  visibility = ['PUBLIC'],
+)
